@@ -132,8 +132,8 @@ Citizen.CreateThread(function()
 		Citizen.Wait(0)
     if not beltOn and wasInCar and GetIsVehicleEngineRunning(car) and not IsPauseMenuActive() then
       
-			TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'seatbelt', 0.3)
-			Citizen.Wait(9000)
+			TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'warning', 0.3)
+			Citizen.Wait(600)
 		end
 	end
 end)
