@@ -1,140 +1,137 @@
-local isUiOpen = false 
+local isUiOpen = false
 local speedBuffer  = {}
 local velBuffer    = {}
 local beltOn       = false
 local wasInCar     = false
 
 function notify(string)
-  SetNotificationTextEntry("STRING")
-  AddTextComponentString(string)
-  DrawNotification(false, true)
+    SetNotificationTextEntry("STRING")
+    AddTextComponentString(string)
+    DrawNotification(false, true)
 end
 
 IsCar = function(veh)
-        local vc = GetVehicleClass(veh)
-        return (vc >= 0 and vc <= 7) or (vc >= 9 and vc <= 12) or (vc >= 17 and vc <= 20)
-        end 
+    local vc = GetVehicleClass(veh)
+    return (vc >= 0 and vc <= 7) or (vc >= 9 and vc <= 12) or (vc >= 17 and vc <= 20)
+end
 
 Fwv = function (entity)
-        local hr = GetEntityHeading(entity) + 90.0
-        if hr < 0.0 then hr = 360.0 + hr end
-        hr = hr * 0.0174533
-        return { x = math.cos(hr) * 2.0, y = math.sin(hr) * 2.0 }
-      end
- 
-Citizen.CreateThread(function()
-  while true do
-    Citizen.Wait(0)
-  
-    local ped = GetPlayerPed(-1)
-    local car = GetVehiclePedIsIn(ped)
+    local hr = GetEntityHeading(entity) + 90.0
+    if hr < 0.0 then hr = 360.0 + hr end
+    hr = hr * 0.0174533
+    return { x = math.cos(hr) * 2.0, y = math.sin(hr) * 2.0 }
+end
 
-    -- only display warning if engine is runnning
-    if GetIsVehicleEngineRunning(car) then
-    
-      if car ~= 0 and (wasInCar or IsCar(car)) then
-          wasInCar = true
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(0)
+
+        local ped = GetPlayerPed(-1)
+        local car = GetVehiclePedIsIn(ped)
+
+        -- only display warning if engine is runnning
+        if GetIsVehicleEngineRunning(car) then
+
+            if car ~= 0 and (wasInCar or IsCar(car)) then
+                wasInCar = true
                 if isUiOpen == false and not IsPlayerDead(PlayerId()) then
                     SendNUIMessage({
-                    displayWindow = 'true'
+                        displayWindow = 'true'
                     })
                     isUiOpen = true
                 end
 
-          if beltOn then 
-        DisableControlAction(0, 75, true)  -- Disable exit vehicle when stop
-        DisableControlAction(27, 75, true) -- Disable exit vehicle when Driving
-      end
-    end
+                if beltOn then
+                    DisableControlAction(0, 75, true)  -- Prevent exiting vehicle when stationary
+                    DisableControlAction(27, 75, true) -- Prevent exiting vehicle when moving
+                end
+            end
 
-      speedBuffer[2] = speedBuffer[1]
-      speedBuffer[1] = GetEntitySpeed(car)
+            speedBuffer[2] = speedBuffer[1]
+            speedBuffer[1] = GetEntitySpeed(car)
 
 
-      
-      if speedBuffer[2] ~= nil 
-        and not beltOn
-        and GetEntitySpeedVector(car, true).y > 1.0  
-        and speedBuffer[1] > 19.25 
-        and (speedBuffer[2] - speedBuffer[1]) > (speedBuffer[1] * 0.255) then
-        
-        local co = GetEntityCoords(ped)
-        local fw = Fwv(ped)
-        SetEntityCoords(ped, co.x + fw.x, co.y + fw.y, co.z - 0.47, true, true, true)
-        SetEntityVelocity(ped, velBuffer[2].x, velBuffer[2].y, velBuffer[2].z)
-        Citizen.Wait(1)
-        SetPedToRagdoll(ped, 1000, 1000, 0, 0, 0, 0)
-      end
-        
-      velBuffer[2] = velBuffer[1]
-      velBuffer[1] = GetEntityVelocity(car)
-        
-      if IsControlJustReleased(0, 344) and GetLastInputMethod(0) then
-        beltOn = not beltOn 
-        if beltOn then
-        Citizen.Wait(1)
 
-        --- Täältä voit muuttaa ääntä, kun turvavyö laitetaan päälle -- Tässä ----
-        ---- Here you can change sounds, when you put seatbelt on ----- Here -----
-      TriggerServerEvent('InteractSound_SV:PlayOnSource', 'buckle', 0.9)
-      Citizen.Wait(2500)
-      notify('~y~Seatbelt~s~: ~g~connected~s~')
-      
-      SendNUIMessage({
-        displayWindow = 'false'
-        })
-      isUiOpen = true 
-    else 
-      notify('~y~Seatbelt~s~: ~r~disconnected~s~')
-            --- Täältä voit muuttaa ääntä, kun turvavyö otetaan pois -- Tässä ------
-          ---- Here you can change sounds, when you take seatbelt off - Here -----
-      TriggerServerEvent('InteractSound_SV:PlayOnSource', 'unbuckle', 0.9)
+            if speedBuffer[2] ~= nil
+                and not beltOn
+                and GetEntitySpeedVector(car, true).y > 1.0
+                and speedBuffer[1] > 19.25
+                and (speedBuffer[2] - speedBuffer[1]) > (speedBuffer[1] * 0.255) then
 
-      SendNUIMessage({
-        displayWindow = 'true'
-        })
-      isUiOpen = true  
-    end
-      end
-      
-    elseif wasInCar then
-      wasInCar = false
-      beltOn = false
-      speedBuffer[1], speedBuffer[2] = 0.0, 0.0
+                local co = GetEntityCoords(ped)
+                local fw = Fwv(ped)
+                SetEntityCoords(ped, co.x + fw.x, co.y + fw.y, co.z - 0.47, true, true, true)
+                SetEntityVelocity(ped, velBuffer[2].x, velBuffer[2].y, velBuffer[2].z)
+                Citizen.Wait(1)
+                SetPedToRagdoll(ped, 1000, 1000, 0, 0, 0, 0)
+            end
+
+            velBuffer[2] = velBuffer[1]
+            velBuffer[1] = GetEntityVelocity(car)
+
+            if IsControlJustReleased(0, 344) and GetLastInputMethod(0) then
+                beltOn = not beltOn
+                if beltOn then
+                    Citizen.Wait(1)
+
+                    ---- buckle sound -----
+                    TriggerServerEvent('InteractSound_SV:PlayOnSource', 'buckle', 0.9)
+                    Citizen.Wait(2500)
+                    notify('~y~Seatbelt~s~: ~g~connected~s~')
+
+                    SendNUIMessage({
+                        displayWindow = 'false'
+                    })
+                    isUiOpen = true
+                else
+                    notify('~y~Seatbelt~s~: ~r~disconnected~s~')
+                    ---- unbuckle sound -----
+                    TriggerServerEvent('InteractSound_SV:PlayOnSource', 'unbuckle', 0.9)
+
+                    SendNUIMessage({
+                        displayWindow = 'true'
+                    })
+                    isUiOpen = true
+                end
+            end
+
+        elseif wasInCar then
+            wasInCar = false
+            beltOn = false
+            speedBuffer[1], speedBuffer[2] = 0.0, 0.0
             if isUiOpen == true and not IsPlayerDead(PlayerId()) then
                 SendNUIMessage({
-                displayWindow = 'false'
+                    displayWindow = 'false'
                 })
-                isUiOpen = false 
+                isUiOpen = false
             end
+        end
+
     end
-    
-  end
 end)
 
 Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(100)
-		if (IsPlayerDead(PlayerId()) and isUiOpen == true) or IsPauseMenuActive() then
-			SendNUIMessage({
-				displayWindow = 'false'
-			})
-			isUiOpen = false
-		end    
-	end
+    while true do
+        Citizen.Wait(100)
+        if (IsPlayerDead(PlayerId()) and isUiOpen == true) or IsPauseMenuActive() then
+            SendNUIMessage({
+                displayWindow = 'false'
+            })
+            isUiOpen = false
+        end
+    end
 end)
 
 
 Citizen.CreateThread(function()
-  local ped = GetPlayerPed(-1)
-  local car = GetVehiclePedIsIn(ped)  
-	while true do
-		Citizen.Wait(0)
-    if not beltOn and wasInCar and GetIsVehicleEngineRunning(car) and not IsPauseMenuActive() then
-      
-			TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'warning', 0.3)
-			Citizen.Wait(600)
-		end
-	end
-end)
+    local ped = GetPlayerPed(-1)
+    local car = GetVehiclePedIsIn(ped)
+    while true do
+        Citizen.Wait(0)
+        if not beltOn and wasInCar and GetIsVehicleEngineRunning(car) and not IsPauseMenuActive() then
 
+            TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'warning', 0.3)
+            Citizen.Wait(600)
+        end
+    end
+end)
