@@ -5,7 +5,7 @@ window.addEventListener('message', function(e) {
         $("#container").css('display', 'flex');
   		
         $("#container").animate({
-        	bottom: "25%",
+        	bottom: "350px",
         	opacity: "1.0"
         	},
         	700, function() {

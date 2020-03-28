@@ -113,27 +113,28 @@ Citizen.CreateThread(function()
 end)
 
 Citizen.CreateThread(function()
-  while true do
-    Citizen.Wait(100)
-    if (IsPlayerDead(PlayerId()) and isUiOpen == true) or IsPauseMenuActive() then
-      SendNUIMessage({
-        displayWindow = 'false'
-      })
-      isUiOpen = false
-    end    
-  end
+	while true do
+		Citizen.Wait(100)
+		if (IsPlayerDead(PlayerId()) and isUiOpen == true) or IsPauseMenuActive() then
+			SendNUIMessage({
+				displayWindow = 'false'
+			})
+			isUiOpen = false
+		end    
+	end
 end)
 
 
 Citizen.CreateThread(function()
   local ped = GetPlayerPed(-1)
   local car = GetVehiclePedIsIn(ped)  
-  while true do
-    Citizen.Wait(0)
+	while true do
+		Citizen.Wait(0)
     if not beltOn and wasInCar and GetIsVehicleEngineRunning(car) and not IsPauseMenuActive() then
       
-      TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'warning', 0.7)
-      Citizen.Wait(9000)
-    end
-  end
+			TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 0.3, 'seatbelt', 0.3)
+			Citizen.Wait(9000)
+		end
+	end
 end)
+
